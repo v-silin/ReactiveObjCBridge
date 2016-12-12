@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = "9.0"
   s.watchos.deployment_target = "2.0"
   
-  s.source       = { :git => "https://github.com/ReactiveCocoa/ReactiveCocoa.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/v-silin/ReactiveObjCBridge.git", :tag => "#{s.version}" }
   s.source_files = "ReactiveCocoa/*.{swift,h,m}", "ReactiveCocoa/Shared/*.{swift}"
   s.private_header_files = "ReactiveCocoa/RACObjCRuntimeUtilities.h"
   s.osx.source_files = "ReactiveCocoa/AppKit/*.{swift}"
