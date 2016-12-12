@@ -23,8 +23,8 @@ Pod::Spec.new do |s|
   s.watchos.exclude_files = "ReactiveCocoa/Shared/*.{swift}"
   s.module_map = "ReactiveCocoa/module.modulemap"
   
-  s.dependency 'ReactiveSwift', :git => 'https://github.com/v-silin/ReactiveSwift.git', :branch => 'podspec_custom_forks'
-  s.dependency 'ReactiveObjC', :git => 'https://github.com/v-silin/ReactiveObjC.git', :branch => 'podspec_custom_forks'
+  s.dependency 'ReactiveSwift'
+  s.dependency 'ReactiveObjC'
   s.dependency 'Result', '~> 3.1'
 
 end
