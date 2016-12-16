@@ -27,11 +27,12 @@ extension SignalProducerProtocol {
 
 extension RACDisposable: Disposable {}
 extension RACScheduler: DateSchedulerProtocol {
+	
 	/// The current date, as determined by this scheduler.
 	public var currentDate: Date {
 		return Date()
 	}
-
+	
 	/// Schedule an action for immediate execution.
 	///
 	/// - note: This method calls the Objective-C implementation of `schedule:`
@@ -47,7 +48,7 @@ extension RACScheduler: DateSchedulerProtocol {
 		let disposable: RACDisposable? = self.schedule(action) // Call the Objective-C implementation
 		return disposable as Disposable?
 	}
-
+	
 	/// Schedule an action for execution at or after the given date.
 	///
 	/// - parameters:
@@ -60,21 +61,25 @@ extension RACScheduler: DateSchedulerProtocol {
 	public func schedule(after date: Date, action: @escaping () -> Void) -> Disposable? {
 		return self.after(date, schedule: action)
 	}
-
-	/// Schedule a recurring action at the given interval, beginning at the
-	/// given start time.
+	
+	/// Schedules a recurring action at the given interval, beginning at the
+	/// given date.
 	///
 	/// - parameters:
-	///   - date: Starting date.
+	///   - date: Starting time.
 	///   - repeatingEvery: Repetition interval.
 	///   - withLeeway: Some delta for repetition.
 	///   - action: Closure of the action to perform.
 	///
+	///	- note: If you plan to specify an `interval` value greater than 200,000
+	///			seconds, use `schedule(after:interval:leeway:action)` instead
+	///			and specify your own `leeway` value to avoid potential overflow.
+	///
 	/// - returns: Optional `Disposable` that can be used to cancel the work
-	///            before it begins.
+	///
 	@discardableResult
-	public func schedule(after date: Date, interval: TimeInterval, leeway: TimeInterval, action: @escaping () -> Void) -> Disposable? {
-		return self.after(date, repeatingEvery: interval, withLeeway: leeway, schedule: action)
+	public func schedule(after date: Date, interval: DispatchTimeInterval, leeway: DispatchTimeInterval, action: @escaping () -> Void) -> Disposable? {
+		return self.after(date, repeatingEvery: interval.timeInterval, withLeeway: leeway.timeInterval, schedule: action)
 	}
 }
 
@@ -124,15 +129,15 @@ public func bridgedSignalProducer<Value>(from signal: RACSignal<Value>, file: St
 		let next: (_ value: Value?) -> Void = { obj in
 			observer.send(value: obj)
 		}
-
+		
 		let failed: (_ nsError: Swift.Error?) -> () = {
 			observer.send(error: ($0 as? NSError) ?? defaultNSError("Nil RACSignal error", file: file, line: line))
 		}
-
+		
 		let completed = {
 			observer.sendCompleted()
 		}
-
+		
 		disposable += signal.subscribeNext(next, error: failed, completed: completed)
 	}
 }
@@ -158,7 +163,7 @@ extension SignalProducerProtocol where Value: AnyObject {
 					break
 				}
 			}
-
+			
 			return RACDisposable {
 				selfDisposable.dispose()
 			}
@@ -218,7 +223,7 @@ extension SignalProtocol where Value: AnyObject {
 					break
 				}
 			}
-
+			
 			return RACDisposable {
 				selfDisposable?.dispose()
 			}
@@ -230,7 +235,7 @@ extension SignalProtocol where Value: OptionalProtocol, Value.Wrapped: AnyObject
 	/// Create a `RACSignal` that will observe the given signal.
 	///
 	/// - note: Any `interrupted` events will be silently discarded.
-	/// - note: This overload is necessary to prevent `Optional.none` from 
+	/// - note: This overload is necessary to prevent `Optional.none` from
 	///         being bridged to `NSNull` (instead of `nil`).
 	///         See ReactiveObjCBridge#5 for more details.
 	///
@@ -281,14 +286,14 @@ extension ActionProtocol {
 /// - returns: Action created from `self`.
 public func bridgedAction<Input, Output>(from command: RACCommand<Input, Output>, file: String = #file, line: Int = #line) -> Action<Input?, Output?, NSError> {
 	let enabledProperty = MutableProperty(true)
-
+	
 	enabledProperty <~ bridgedSignalProducer(from: command.enabled)
 		.map { $0 as! Bool }
 		.flatMapError { _ in SignalProducer<Bool, NoError>(value: false) }
-
+	
 	return Action<Input?, Output?, NSError>(enabledIf: enabledProperty) { input -> SignalProducer<Output?, NSError> in
 		let signal: RACSignal<Output> = command.execute(input)
-
+		
 		return bridgedSignalProducer(from: signal)
 	}
 }
